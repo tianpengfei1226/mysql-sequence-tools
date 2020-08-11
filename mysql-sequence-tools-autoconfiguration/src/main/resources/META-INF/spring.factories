@@ -1,0 +1,4 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.tpf.mysql.sequence.config.SequenceAutoConfiguration,\
+com.tpf.mysql.sequence.config.SequenceThreadPoolConfig,\
+com.tpf.mysql.sequence.config.DatasourceConfig
