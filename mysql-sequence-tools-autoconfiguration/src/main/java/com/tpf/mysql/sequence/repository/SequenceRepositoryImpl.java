@@ -11,10 +11,7 @@ import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -95,7 +92,8 @@ public class SequenceRepositoryImpl implements SequenceRepository, InitializingB
                     throw new SequenceUpdateException(e);
                 }
 
-                ConcurrentLinkedQueue<Long> newQueue = new ConcurrentLinkedQueue();
+                // 没有就创建，否则延用之前的序列。每次都新建会导致序列断层
+                ConcurrentLinkedQueue newQueue = Optional.ofNullable(sequenceQueue.get(sequenceName)).orElse(new ConcurrentLinkedQueue());
 
                 for (int i = 0; i < total; ++i) {
                     newQueue.add(beforeValue);
