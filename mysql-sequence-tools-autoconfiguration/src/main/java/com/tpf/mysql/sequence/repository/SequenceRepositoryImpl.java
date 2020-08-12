@@ -33,7 +33,7 @@ public class SequenceRepositoryImpl implements SequenceRepository, InitializingB
     private ConcurrentHashMap<String, AtomicInteger> counts = new ConcurrentHashMap();
     @Resource(name = "sequenceThreadPoolTaskExecutor")
     private ThreadPoolTaskExecutor sequenceThreadPoolTaskExecutor;
-    @Resource
+    @Resource(name = "sequenceTransactionTemplate")
     private TransactionTemplate transactionTemplate;
 
     private Map<String, Integer> thresholds = new HashMap();
@@ -43,7 +43,7 @@ public class SequenceRepositoryImpl implements SequenceRepository, InitializingB
     public void flush(String sequenceName) {
         if (this.overThreshold(sequenceName)) {
             try {
-                ((ReentrantLock) this.locks.get(sequenceName)).lock();
+                (this.locks.get(sequenceName)).lock();
                 if (this.overThreshold(sequenceName)) {
                     try {
                         this.flushBuffer(sequenceName);
@@ -52,7 +52,7 @@ public class SequenceRepositoryImpl implements SequenceRepository, InitializingB
                     }
                 }
             } finally {
-                ((ReentrantLock) this.locks.get(sequenceName)).unlock();
+                (this.locks.get(sequenceName)).unlock();
             }
         }
 
@@ -113,15 +113,15 @@ public class SequenceRepositoryImpl implements SequenceRepository, InitializingB
 
     @Override
     public Long next(String sequenceName) {
-        ConcurrentLinkedQueue<Long> queue = (ConcurrentLinkedQueue) this.sequenceQueue.get(sequenceName);
+        ConcurrentLinkedQueue<Long> queue = sequenceQueue.get(sequenceName);
         if (queue == null) {
             this.flushBuffer(sequenceName);
-            queue = (ConcurrentLinkedQueue) this.sequenceQueue.get(sequenceName);
+            queue = sequenceQueue.get(sequenceName);
         }
 
-        Long sequence = (Long) queue.poll();
+        Long sequence = queue.poll();
         if (sequence != null) {
-            ((AtomicInteger) this.counts.get(sequenceName)).incrementAndGet();
+            (counts.get(sequenceName)).incrementAndGet();
             if (this.overThreshold(sequenceName)) {
                 this.asyncFlush(sequenceName);
             }
@@ -138,12 +138,22 @@ public class SequenceRepositoryImpl implements SequenceRepository, InitializingB
     }
 
     private boolean overThreshold(String sequenceName) {
-        return ((AtomicInteger) this.counts.get(sequenceName)).intValue() >= (Integer) this.totals.get(sequenceName) - (Integer) this.thresholds.get(sequenceName);
+        return (counts.get(sequenceName)).intValue() >= getQueueSize(sequenceName) - this.thresholds.get(sequenceName);
     }
+
+    private Integer getQueueSize(String sequenceName) {
+        ConcurrentLinkedQueue<Long> queue = Optional.ofNullable(sequenceQueue.get(sequenceName)).orElse(new ConcurrentLinkedQueue<>());
+        if (queue.size() > totals.get(sequenceName)) {
+            return queue.size();
+        }
+        return totals.get(sequenceName);
+    }
+
 
     private void asyncFlush(final String sequenceName) {
         try {
             this.sequenceThreadPoolTaskExecutor.execute(() -> SequenceRepositoryImpl.this.flush(sequenceName));
+//            SequenceRepositoryImpl.this.flush(sequenceName);
         } catch (TaskRejectedException e) {
             // TODO
 

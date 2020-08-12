@@ -28,16 +28,16 @@ public class DatasourceConfig {
 //    }
 
     @Autowired
-    DataSource dataSource;
+    DataSource sequenceDataSource;
 
     @Bean
-    public DataSourceTransactionManager transactionManager(){
-        return new DataSourceTransactionManager(dataSource);
+    public DataSourceTransactionManager sequenceTransactionManager(){
+        return new DataSourceTransactionManager(sequenceDataSource);
     }
 
     @Bean
-    public TransactionTemplate transactionTemplate(){
-        return new TransactionTemplate(transactionManager());
+    public TransactionTemplate sequenceTransactionTemplate(){
+        return new TransactionTemplate(sequenceTransactionManager());
     }
 
 }

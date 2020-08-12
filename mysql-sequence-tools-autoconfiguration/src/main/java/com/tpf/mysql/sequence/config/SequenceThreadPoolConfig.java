@@ -16,7 +16,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Configuration
 public class SequenceThreadPoolConfig {
 
-    @Value("${threadPoolSize.asyncTask.corePoolSize:2}")
+    @Value("${threadPoolSize.asyncTask.corePoolSize:5}")
     private Integer corePoolSize;
     @Value("${threadPoolSize.asyncTask.maxPoolSize:10}")
     private Integer maxPoolSize;
