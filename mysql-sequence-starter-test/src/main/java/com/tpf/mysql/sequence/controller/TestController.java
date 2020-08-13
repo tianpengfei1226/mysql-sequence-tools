@@ -17,9 +17,9 @@ public class TestController {
     @Autowired
     SequenceRepository sequenceRepository;
 
-    @GetMapping("/testSeq")
+    @GetMapping("/test-seq")
     public String testSequence() {
-        Long next = sequenceRepository.next("tpt-test");
+        Long next = sequenceRepository.next("tpf-test");
         return next + "";
     }
 }
